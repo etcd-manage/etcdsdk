@@ -1,11 +1,17 @@
 package etcdv3
 
 import (
+	"context"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/pkg/transport"
 	"github.com/etcd-manage/etcdsdk/model"
+)
+
+var (
+	// DefaultTimeout 默认查询超时
+	DefaultTimeout = 5 * time.Second
 )
 
 // EtcdV3Sdk etcd v3版
@@ -70,6 +76,21 @@ func NewClient(cfg *model.Config) (client model.EtcdSdk, err error) {
 
 // List 显示当前path下所有key
 func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
+	// 9 秒超时
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	// 获取指定前缀key列表
+	resp, err := sdk.cli.Get(ctx, path,
+		clientv3.WithPrefix(),
+		clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend))
+	if err != nil {
+		return
+	}
+	/* 处理出当前目录层的key */
+	if resp.Count == 0 {
+		return
+	}
+	list, err = sdk.ConvertToPath(path, resp.Kvs)
 
 	return
 }
