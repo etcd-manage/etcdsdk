@@ -6,11 +6,11 @@ import "github.com/coreos/etcd/etcdserver/etcdserverpb"
 
 // Node 一个key 目录或文件
 type Node struct {
-	IsDir   bool   `json:"is_dir,omitempty"`
-	Path    string `json:"path,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Value   string `json:"value,string,omitempty"`
-	Version int64  `json:"version,omitempty"`
+	IsDir   bool   `json:"is_dir"`
+	Path    string `json:"path"`
+	Name    string `json:"name"`
+	Value   string `json:"value,string"`
+	Version int64  `json:"version"`
 }
 
 const (
