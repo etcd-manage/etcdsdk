@@ -2,6 +2,7 @@ package etcdv3
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -81,8 +82,7 @@ func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
 	defer cancel()
 	// 获取指定前缀key列表
 	resp, err := sdk.cli.Get(ctx, path,
-		clientv3.WithPrefix(),
-		clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend))
+		clientv3.WithPrefix())
 	if err != nil {
 		return
 	}
@@ -92,30 +92,103 @@ func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
 	}
 	list, err = sdk.ConvertToPath(path, resp.Kvs)
 
+	// etcd 排序无效，自己实现
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].Path < list[j].Path
+	})
+
 	return
 }
 
 // Val 获取path的值
 func (sdk *EtcdV3Sdk) Val(path string) (data []byte, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	resp, err := sdk.cli.Get(ctx, path)
+	if err != nil {
+		return
+	}
+	if len(resp.Kvs) == 0 {
+		return
+	}
+	data = resp.Kvs[0].Value
 	return
 }
 
 // Add 添加key
 func (sdk *EtcdV3Sdk) Add(path string, data []byte) (err error) {
+	// 使用事物，防止覆盖，添加就是添加，不可以覆盖
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	txn := sdk.cli.Txn(ctx)
+	txn.If(
+		clientv3.Compare(
+			clientv3.Version(path),
+			"=",
+			0,
+		),
+	).Then(
+		clientv3.OpPut(path, string(data)),
+	)
+
+	txnResp, err := txn.Commit()
+	if err != nil {
+		return err
+	}
+
+	if !txnResp.Succeeded {
+		return model.ERR_ADD_KEY
+	}
 	return
 }
 
 // Put 修改key
 func (sdk *EtcdV3Sdk) Put(path string, data []byte) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	_, err = sdk.cli.Put(ctx, path, string(data))
+	if err != nil {
+		return
+	}
 	return
 }
 
-// Del 删除key
+// Del 删除key - 虚拟目录不允许删除
 func (sdk *EtcdV3Sdk) Del(path string) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	_, err = sdk.cli.Delete(ctx, path)
+	if err != nil {
+		return
+	}
 	return
 }
 
 // Members 获取节点列表
 func (sdk *EtcdV3Sdk) Members() (members []*model.Member, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+
+	resp, err := sdk.cli.MemberList(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, member := range resp.Members {
+		if len(member.ClientURLs) > 0 {
+			m := &model.Member{Member: member, Role: model.ROLE_FOLLOWER, Status: model.STATUS_UNHEALTHY}
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			resp, err := sdk.cli.Status(ctx, m.ClientURLs[0])
+			if err == nil {
+				m.Status = model.STATUS_HEALTHY
+				m.DbSize = resp.DbSize
+				if resp.Leader == resp.Header.MemberId {
+					m.Role = model.ROLE_LEADER
+				}
+			}
+			members = append(members, m)
+		}
+	}
 	return
 }

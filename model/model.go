@@ -9,7 +9,7 @@ type Node struct {
 	IsDir   bool   `json:"is_dir"`
 	Path    string `json:"path"`
 	Name    string `json:"name"`
-	Value   string `json:"value,string"`
+	Value   string `json:"value"`
 	Version int64  `json:"version"`
 }
 
