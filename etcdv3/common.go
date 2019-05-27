@@ -7,7 +7,7 @@ import (
 	"github.com/etcd-manage/etcdsdk/model"
 )
 
-// ConvertToPath 处理etcd3 的key为目录形式
+// ConvertToPath 处理etcd3 的key为目录形式 - path只能是/结尾或为空
 func (sdk *EtcdV3Sdk) ConvertToPath(path string, keys []*mvccpb.KeyValue) (list []*model.Node, err error) {
 	path = strings.TrimRight(path, "/")
 	keyMapVal := make(map[string]*model.Node, 0)

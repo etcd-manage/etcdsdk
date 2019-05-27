@@ -9,5 +9,6 @@ var (
 	ERR_ETCD_ADDRESS_EMPTY  = errors.New("Etcd connection address cannot be empty")
 	ERR_UNSUPPORTED_VERSION = errors.New("Unsupported etcd version")
 
-	ERR_ADD_KEY = errors.New("Add key error")
+	ERR_ADD_KEY       = errors.New("Add key error")
+	ERR_KEY_NOT_FOUND = errors.New("Key does not exist")
 )

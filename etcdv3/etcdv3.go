@@ -82,7 +82,7 @@ func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
 	defer cancel()
 	// 获取指定前缀key列表
 	resp, err := sdk.cli.Get(ctx, path,
-		clientv3.WithPrefix())
+		clientv3.WithPrefix(), clientv3.WithKeysOnly())
 	if err != nil {
 		return
 	}
@@ -101,7 +101,7 @@ func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
 }
 
 // Val 获取path的值
-func (sdk *EtcdV3Sdk) Val(path string) (data []byte, err error) {
+func (sdk *EtcdV3Sdk) Val(path string) (data *model.Node, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 	resp, err := sdk.cli.Get(ctx, path)
@@ -109,9 +109,15 @@ func (sdk *EtcdV3Sdk) Val(path string) (data []byte, err error) {
 		return
 	}
 	if len(resp.Kvs) == 0 {
+		err = model.ERR_KEY_NOT_FOUND
 		return
 	}
-	data = resp.Kvs[0].Value
+	// 返回一个node结构
+	list, err := sdk.ConvertToPath(path, resp.Kvs)
+	if err != nil {
+		return
+	}
+	data = list[0]
 	return
 }
 
