@@ -2,6 +2,7 @@ package etcdv3
 
 import (
 	"context"
+	"log"
 	"sort"
 	"time"
 
@@ -82,7 +83,7 @@ func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
 	defer cancel()
 	// 获取指定前缀key列表
 	resp, err := sdk.cli.Get(ctx, path,
-		clientv3.WithPrefix(), clientv3.WithKeysOnly())
+		clientv3.WithPrefix(), clientv3.WithKeysOnly()) // 此处只查询出key，不查询值
 	if err != nil {
 		return
 	}
@@ -96,6 +97,18 @@ func (sdk *EtcdV3Sdk) List(path string) (list []*model.Node, err error) {
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].Path < list[j].Path
 	})
+
+	// 如果是值，则查询值内容
+	for _, v := range list {
+		rv, err := sdk.cli.Get(ctx, v.Path)
+		if err != nil {
+			log.Println("读取值错误")
+			continue
+		}
+		if len(rv.Kvs) > 0 {
+			v.Value = string(rv.Kvs[0].Value)
+		}
+	}
 
 	return
 }

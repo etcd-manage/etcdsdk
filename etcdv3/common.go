@@ -47,7 +47,7 @@ func (sdk *EtcdV3Sdk) ConvertToPath(path string, keys []*mvccpb.KeyValue) (list 
 					IsDir:   true,
 					Path:    fullKey,
 					Name:    key,
-					Value:   "",
+					Value:   string(val.Value),
 					Version: 0,
 				}
 			}
