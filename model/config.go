@@ -1,5 +1,7 @@
 package model
 
+import "encoding/json"
+
 const (
 	ETCD_VERSION_V2 = "v2"
 	ETCD_VERSION_V3 = "v3"
@@ -15,4 +17,9 @@ type Config struct {
 	CaFile    string   `json:"ca_file,omitempty"`
 	Username  string   `json:"username,omitempty"`
 	Password  string   `json:"password,omitempty"`
+}
+
+func (c *Config) String() string {
+	js, _ := json.Marshal(c)
+	return string(js)
 }

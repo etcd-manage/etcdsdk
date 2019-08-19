@@ -1,6 +1,7 @@
 package etcdsdk
 
 import (
+	"log"
 	"sync"
 
 	"github.com/etcd-manage/etcdsdk/etcdv2"
@@ -20,33 +21,36 @@ var (
 
 // NewClientByConfig 创建一个etcd客户端
 // 可重复调用，不会重复和etcd建立连接
-func NewClientByConfig(cfg *model.Config) (client model.EtcdSdk, err error) {
-	if cfg == nil {
+func NewClientByConfig(cfgObj *model.Config) (client model.EtcdSdk, err error) {
+	if cfgObj == nil {
 		err = model.ERR_CONFIG_ISNIL
 		return
 	}
-	if cfg.Version == model.ETCD_VERSION_V2 {
+	cfg := cfgObj.String()
+	if cfgObj.Version == model.ETCD_VERSION_V2 {
 		if val, ok := v2ClientMap.Load(cfg); ok == true {
 			client, ok = val.(model.EtcdSdk)
 			if ok == false {
-				client, err = etcdv2.NewClient(cfg)
+				client, err = etcdv2.NewClient(cfgObj)
 			} else {
 				return
 			}
 		} else {
-			client, err = etcdv2.NewClient(cfg)
+			client, err = etcdv2.NewClient(cfgObj)
 		}
 		v2ClientMap.Store(cfg, client)
-	} else if cfg.Version == model.ETCD_VERSION_V3 {
+	} else if cfgObj.Version == model.ETCD_VERSION_V3 {
 		if val, ok := v3ClientMap.Load(cfg); ok == true {
 			client, ok = val.(model.EtcdSdk)
 			if ok == false {
-				client, err = etcdv3.NewClient(cfg)
+				log.Println("创建连接v3")
+				client, err = etcdv3.NewClient(cfgObj)
 			} else {
 				return
 			}
 		} else {
-			client, err = etcdv3.NewClient(cfg)
+			log.Println("创建连接v3")
+			client, err = etcdv3.NewClient(cfgObj)
 		}
 		v3ClientMap.Store(cfg, client)
 	} else {
