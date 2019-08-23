@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -14,6 +15,7 @@ import (
 var (
 	// DefaultTimeout 默认查询超时
 	DefaultTimeout = 5 * time.Second
+	sm             = new(sync.Mutex)
 )
 
 // EtcdV3Sdk etcd v3版
@@ -23,6 +25,10 @@ type EtcdV3Sdk struct {
 
 // NewClient 创建etcd连接
 func NewClient(cfg *model.Config) (client model.EtcdSdk, err error) {
+	sm.Lock()
+	defer func() {
+		sm.Unlock()
+	}()
 	if cfg == nil {
 		err = model.ERR_CONFIG_ISNIL
 		return
@@ -39,11 +45,16 @@ func NewClient(cfg *model.Config) (client model.EtcdSdk, err error) {
 	var cli *clientv3.Client
 
 	if cfg.TlsEnable == true {
+		// 数据库配置存储为key文件内容，此处每次都将内容写入文件
+		certFilePath, keyFilePath, caFilePath, err := writeCa(cfg)
+		if err != nil {
+			return client, err
+		}
 		// tls 配置
 		tlsInfo := transport.TLSInfo{
-			CertFile:      cfg.CertFile,
-			KeyFile:       cfg.KeyFile,
-			TrustedCAFile: cfg.CaFile,
+			CertFile:      certFilePath,
+			KeyFile:       keyFilePath,
+			TrustedCAFile: caFilePath,
 		}
 		tlsConfig, err := tlsInfo.ClientConfig()
 		if err != nil {

@@ -1,6 +1,8 @@
 package etcdv3
 
 import (
+	"encoding/base64"
+	"io/ioutil"
 	"strings"
 
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -60,5 +62,37 @@ func (sdk *EtcdV3Sdk) ConvertToPath(path string, keys []*mvccpb.KeyValue) (list 
 		list = append(list, val)
 	}
 
+	return
+}
+
+// 存储证书文件
+func writeCa(cfg *model.Config) (certFilePath, keyFilePath, caFilePath string, err error) {
+	certFilePath = "./cert.pem"
+	certBody, err := base64.StdEncoding.DecodeString(cfg.CertFile)
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(certFilePath, certBody, 0755)
+	if err != nil {
+		return
+	}
+	keyFilePath = "./key.pem"
+	keyBody, err := base64.StdEncoding.DecodeString(cfg.KeyFile)
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(keyFilePath, keyBody, 0755)
+	if err != nil {
+		return
+	}
+	caFilePath = "./ca.pem"
+	caBody, err := base64.StdEncoding.DecodeString(cfg.CaFile)
+	if err != nil {
+		return
+	}
+	err = ioutil.WriteFile(caFilePath, caBody, 0755)
+	if err != nil {
+		return
+	}
 	return
 }
