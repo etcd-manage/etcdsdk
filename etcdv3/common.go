@@ -11,13 +11,35 @@ import (
 
 // ConvertToPath 处理etcd3 的key为目录形式 - path只能是/结尾或为空
 func (sdk *EtcdV3Sdk) ConvertToPath(path string, keys []*mvccpb.KeyValue) (list []*model.Node, err error) {
-	path = strings.TrimRight(path, "/")
 	keyMapVal := make(map[string]*model.Node, 0)
 	keyMapPath := make(map[string]*model.Node, 0)
 
 	for _, val := range keys {
 		if ok := strings.HasPrefix(string(val.Key), path); ok == true {
 			key := string(val.Key)[len(path):]
+			// 判断是否是//开头，如果是，则本级目录为//
+			if strings.HasPrefix(key, "//") == true {
+				fullKey := path + "/"
+				keyMapPath["/"] = &model.Node{
+					IsDir:   true,
+					Path:    fullKey,
+					Name:    "/",
+					Value:   string(val.Value),
+					Version: 0,
+				}
+				continue
+			}
+			// 处理path为/情况
+			if path == "" && strings.HasPrefix(key, "/") {
+				keyMapPath["/"] = &model.Node{
+					IsDir:   true,
+					Path:    "/",
+					Name:    "/",
+					Value:   string(val.Value),
+					Version: 0,
+				}
+				continue
+			}
 			// 查找下一个/位置
 			i := strings.Index(key, "/")
 			// 截取后第一个字符是/的情况
@@ -43,8 +65,14 @@ func (sdk *EtcdV3Sdk) ConvertToPath(path string, keys []*mvccpb.KeyValue) (list 
 					continue
 				}
 				fullKey := path + "/" + key
+				if path == "/" {
+					fullKey = path + key
+				} else if path == "" {
+					fullKey = key
+				}
 				lastIndex := strings.LastIndex(fullKey, "/")
 				key = fullKey[lastIndex+1:]
+				// log.Println(path, " -- ", key)
 				keyMapPath[key] = &model.Node{
 					IsDir:   true,
 					Path:    fullKey,

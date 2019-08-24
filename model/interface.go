@@ -8,4 +8,5 @@ type EtcdSdk interface {
 	Put(path string, data []byte) (err error)   // 修改key
 	Del(path string) (err error)                // 删除key
 	Members() (members []*Member, err error)    // 获取节点列表
+	Close() (err error)                         // 关闭连接
 }

@@ -198,17 +198,16 @@ func (sdk *EtcdV3Sdk) Del(path string) (err error) {
 func (sdk *EtcdV3Sdk) Members() (members []*model.Member, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
-
 	resp, err := sdk.cli.MemberList(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, member := range resp.Members {
 		if len(member.ClientURLs) > 0 {
 			m := &model.Member{Member: member, Role: model.ROLE_FOLLOWER, Status: model.STATUS_UNHEALTHY}
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 			defer cancel()
+			// log.Println(m.ClientURLs[0])
 			resp, err := sdk.cli.Status(ctx, m.ClientURLs[0])
 			if err == nil {
 				m.Status = model.STATUS_HEALTHY
@@ -221,4 +220,9 @@ func (sdk *EtcdV3Sdk) Members() (members []*model.Member, err error) {
 		}
 	}
 	return
+}
+
+// Close 关闭连接
+func (sdk *EtcdV3Sdk) Close() error {
+	return sdk.cli.Close()
 }

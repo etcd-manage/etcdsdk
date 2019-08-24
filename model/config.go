@@ -1,6 +1,8 @@
 package model
 
-import "encoding/json"
+import (
+	"strconv"
+)
 
 const (
 	ETCD_VERSION_V2 = "v2"
@@ -9,6 +11,7 @@ const (
 
 // Config etcd 连接配置
 type Config struct {
+	EtcdId    int32    `json:"etcd_id,omitempty"`
 	Version   string   `json:"version,omitempty"`
 	Address   []string `json:"address,omitempty"`
 	TlsEnable bool     `json:"tls_enable,omitempty"`
@@ -20,6 +23,5 @@ type Config struct {
 }
 
 func (c *Config) String() string {
-	js, _ := json.Marshal(c)
-	return string(js)
+	return strconv.Itoa(int(c.EtcdId))
 }
