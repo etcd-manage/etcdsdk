@@ -11,4 +11,5 @@ var (
 
 	ERR_ADD_KEY       = errors.New("Add key error")
 	ERR_KEY_NOT_FOUND = errors.New("Key does not exist")
+	ERR_KEY_NOT_DIR   = errors.New("Key is not a directory")
 )

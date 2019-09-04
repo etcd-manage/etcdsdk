@@ -1,7 +1,5 @@
 package model
 
-import "github.com/coreos/etcd/etcdserver/etcdserverpb"
-
 // 这里保存sdk使用到的所有结构图
 
 // Node 一个key 目录或文件
@@ -23,8 +21,12 @@ const (
 
 // Member 节点信息
 type Member struct {
-	*etcdserverpb.Member
-	Role   string `json:"role"`
-	Status string `json:"status"`
-	DbSize int64  `json:"db_size"`
+	// *etcdserverpb.Member
+	ID         string   `json:"ID"`
+	Name       string   `json:"name"`
+	PeerURLs   []string `json:"peerURLs"`
+	ClientURLs []string `json:"clientURLs"`
+	Role       string   `json:"role"`
+	Status     string   `json:"status"`
+	DbSize     int64    `json:"db_size"`
 }

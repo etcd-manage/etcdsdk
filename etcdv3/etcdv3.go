@@ -2,6 +2,7 @@ package etcdv3
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"sync"
@@ -46,7 +47,7 @@ func NewClient(cfg *model.Config) (client model.EtcdSdk, err error) {
 
 	if cfg.TlsEnable == true {
 		// 数据库配置存储为key文件内容，此处每次都将内容写入文件
-		certFilePath, keyFilePath, caFilePath, err := writeCa(cfg)
+		certFilePath, keyFilePath, caFilePath, err := writeCa(cfg, cfg.EtcdId)
 		if err != nil {
 			return client, err
 		}
@@ -204,7 +205,14 @@ func (sdk *EtcdV3Sdk) Members() (members []*model.Member, err error) {
 	}
 	for _, member := range resp.Members {
 		if len(member.ClientURLs) > 0 {
-			m := &model.Member{Member: member, Role: model.ROLE_FOLLOWER, Status: model.STATUS_UNHEALTHY}
+			m := &model.Member{
+				ID:         fmt.Sprint(member.ID),
+				Name:       member.Name,
+				PeerURLs:   member.PeerURLs,
+				ClientURLs: member.ClientURLs,
+				Role:       model.ROLE_FOLLOWER,
+				Status:     model.STATUS_UNHEALTHY,
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 			defer cancel()
 			// log.Println(m.ClientURLs[0])

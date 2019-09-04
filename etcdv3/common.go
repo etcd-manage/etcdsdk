@@ -2,6 +2,7 @@ package etcdv3
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -94,8 +95,8 @@ func (sdk *EtcdV3Sdk) ConvertToPath(path string, keys []*mvccpb.KeyValue) (list 
 }
 
 // 存储证书文件
-func writeCa(cfg *model.Config) (certFilePath, keyFilePath, caFilePath string, err error) {
-	certFilePath = "./cert.pem"
+func writeCa(cfg *model.Config, etcdId int32) (certFilePath, keyFilePath, caFilePath string, err error) {
+	certFilePath = fmt.Sprintf("./%d_cert.pem", etcdId)
 	certBody, err := base64.StdEncoding.DecodeString(cfg.CertFile)
 	if err != nil {
 		return
@@ -104,7 +105,7 @@ func writeCa(cfg *model.Config) (certFilePath, keyFilePath, caFilePath string, e
 	if err != nil {
 		return
 	}
-	keyFilePath = "./key.pem"
+	keyFilePath = fmt.Sprintf("./%d_key.pem", etcdId)
 	keyBody, err := base64.StdEncoding.DecodeString(cfg.KeyFile)
 	if err != nil {
 		return
@@ -113,7 +114,7 @@ func writeCa(cfg *model.Config) (certFilePath, keyFilePath, caFilePath string, e
 	if err != nil {
 		return
 	}
-	caFilePath = "./ca.pem"
+	caFilePath = fmt.Sprintf("./%d_ca.pem", etcdId)
 	caBody, err := base64.StdEncoding.DecodeString(cfg.CaFile)
 	if err != nil {
 		return
