@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -92,7 +93,7 @@ func NewClient(cfg *model.Config) (clientv2 model.EtcdSdk, err error) {
 			address = append(address, "http://"+v)
 		}
 		cfg := client.Config{
-			Endpoints:               cfg.Address,
+			Endpoints:               address,
 			Transport:               client.DefaultTransport,
 			HeaderTimeoutPerRequest: DefaultTimeout,
 			Username:                cfg.Username,
@@ -130,10 +131,15 @@ func (sdk *EtcdV2Sdk) List(path string) (list []*model.Node, err error) {
 	}
 	sort.Sort(rsp.Node.Nodes) // 排个序
 	for _, v := range rsp.Node.Nodes {
+		name := v.Key
+		names := strings.Split(v.Key, "/")
+		if len(names) > 0 {
+			name = names[len(names)-1]
+		}
 		list = append(list, &model.Node{
 			IsDir:   v.Dir,
 			Path:    v.Key,
-			Name:    v.Key,
+			Name:    name,
 			Value:   v.Value,
 			Version: 0,
 		})
